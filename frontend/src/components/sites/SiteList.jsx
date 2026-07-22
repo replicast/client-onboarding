@@ -69,7 +69,7 @@ function SiteList() {
       sortable: false,
       renderCell: (params) => (
         <Box>
-          <IconButton size="small" onClick={() => navigate(`/sites/${params.row.id}`)}>
+          <IconButton size="small" onClick={() => navigate(`/clients/${clientId}/sites/${params.row.id}`)}>
             <EditIcon fontSize="small" />
           </IconButton>
           <IconButton size="small" onClick={() => handleDelete(params.row.id)} color="error">

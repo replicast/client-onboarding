@@ -5,6 +5,7 @@ from typing import List, Optional
 from ..database import get_db
 from ..models.client import Client
 from ..schemas.client import ClientCreate, ClientRead, ClientUpdate, ClientWithSites
+from ..services.blob_storage import blob_storage_service
 
 router = APIRouter()
 
@@ -58,8 +59,8 @@ def list_clients(
     if business_type:
         query = query.filter(Client.business_type == business_type)
 
-    # Apply pagination
-    clients = query.offset(skip).limit(limit).all()
+    # Apply pagination (MS SQL Server requires ORDER BY with OFFSET/LIMIT)
+    clients = query.order_by(Client.id).offset(skip).limit(limit).all()
     return clients
 
 
@@ -97,14 +98,22 @@ def update_client(
 
 
 @router.delete("/{client_id}", status_code=204)
-def delete_client(
+async def delete_client(
     client_id: int,
     db: Session = Depends(get_db)
 ):
-    """Delete a client (and all associated sites due to CASCADE)"""
+    """Delete a client (and all associated sites and documents due to CASCADE)"""
     db_client = db.query(Client).filter(Client.id == client_id).first()
     if not db_client:
         raise HTTPException(status_code=404, detail="Client not found")
+
+    # Delete associated document blobs from storage before removing DB records.
+    # DB rows cascade automatically, but blobs must be cleaned up explicitly.
+    try:
+        await blob_storage_service.delete_client_documents(client_id)
+    except Exception as e:
+        # Log but don't fail - we still want to delete the client record
+        print(f"Warning: Failed to delete blobs for client {client_id}: {str(e)}")
 
     db.delete(db_client)
     db.commit()

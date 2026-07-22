@@ -22,6 +22,9 @@ class Client(Base):
     # Relationship to sites
     sites = relationship("Site", back_populates="client", cascade="all, delete-orphan")
 
+    # Relationship to documents
+    documents = relationship("Document", back_populates="client", cascade="all, delete-orphan")
+
     # Indexes
     __table_args__ = (
         Index('idx_client_name', 'name'),

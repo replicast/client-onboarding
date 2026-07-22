@@ -2,8 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 from typing import List
-from geoalchemy2.shape import from_shape, to_shape
-from shapely.geometry import shape, mapping
+import json
 from ..database import get_db
 from ..models.site import Site
 from ..models.client import Client
@@ -12,30 +11,26 @@ from ..schemas.site import SiteCreate, SiteRead, SiteUpdate
 router = APIRouter()
 
 
-def geojson_to_wkt(geojson_polygon):
-    """Convert GeoJSON polygon to WKT (Well-Known Text) format"""
+def geojson_to_text(geojson_polygon):
+    """Convert GeoJSON polygon to JSON text for storage"""
     if not geojson_polygon:
         return None
     try:
-        # Convert GeoJSON to Shapely geometry
-        geometry = shape(geojson_polygon)
-        # Convert to WKT using GeoAlchemy2
-        return from_shape(geometry, srid=4326)
+        # Store as JSON string
+        return json.dumps(geojson_polygon)
     except Exception as e:
         raise ValueError(f"Invalid GeoJSON polygon: {str(e)}")
 
 
-def wkt_to_geojson(wkt_element):
-    """Convert WKT to GeoJSON format"""
-    if not wkt_element:
+def text_to_geojson(text_polygon):
+    """Convert JSON text to GeoJSON format"""
+    if not text_polygon:
         return None
     try:
-        # Convert WKT to Shapely geometry
-        geometry = to_shape(wkt_element)
-        # Convert to GeoJSON
-        return mapping(geometry)
+        # Parse JSON string back to dict
+        return json.loads(text_polygon)
     except Exception as e:
-        print(f"Error converting WKT to GeoJSON: {str(e)}")
+        print(f"Error converting text to GeoJSON: {str(e)}")
         return None
 
 
@@ -51,28 +46,28 @@ def create_site(
     if not client:
         raise HTTPException(status_code=404, detail="Client not found")
 
-    # Convert GeoJSON to WKT
-    geolocation_wkt = geojson_to_wkt(site.geolocation_polygon)
+    # Convert GeoJSON to text for storage
+    geolocation_text = geojson_to_text(site.geolocation_polygon)
 
     # Create site
     db_site = Site(
         client_id=client_id,
         name=site.name,
         site_type=site.site_type,
-        geolocation_polygon=geolocation_wkt
+        geolocation_polygon=geolocation_text
     )
 
     db.add(db_site)
     db.commit()
     db.refresh(db_site)
 
-    # Convert WKT back to GeoJSON for response
+    # Convert text back to GeoJSON for response
     site_dict = {
         "id": db_site.id,
         "client_id": db_site.client_id,
         "name": db_site.name,
         "site_type": db_site.site_type,
-        "geolocation_polygon": wkt_to_geojson(db_site.geolocation_polygon),
+        "geolocation_polygon": text_to_geojson(db_site.geolocation_polygon),
         "created_at": db_site.created_at,
         "updated_at": db_site.updated_at,
         "created_by": db_site.created_by
@@ -94,7 +89,7 @@ def list_sites_for_client(
 
     sites = db.query(Site).filter(Site.client_id == client_id).all()
 
-    # Convert WKT to GeoJSON for each site
+    # Convert text to GeoJSON for each site
     sites_list = []
     for site in sites:
         sites_list.append({
@@ -102,7 +97,7 @@ def list_sites_for_client(
             "client_id": site.client_id,
             "name": site.name,
             "site_type": site.site_type,
-            "geolocation_polygon": wkt_to_geojson(site.geolocation_polygon),
+            "geolocation_polygon": text_to_geojson(site.geolocation_polygon),
             "created_at": site.created_at,
             "updated_at": site.updated_at,
             "created_by": site.created_by
@@ -126,7 +121,7 @@ def get_site(
         "client_id": site.client_id,
         "name": site.name,
         "site_type": site.site_type,
-        "geolocation_polygon": wkt_to_geojson(site.geolocation_polygon),
+        "geolocation_polygon": text_to_geojson(site.geolocation_polygon),
         "created_at": site.created_at,
         "updated_at": site.updated_at,
         "created_by": site.created_by
@@ -150,7 +145,7 @@ def update_site(
     # Handle geolocation separately
     if "geolocation_polygon" in update_data:
         geojson_polygon = update_data.pop("geolocation_polygon")
-        db_site.geolocation_polygon = geojson_to_wkt(geojson_polygon)
+        db_site.geolocation_polygon = geojson_to_text(geojson_polygon)
 
     # Update other fields
     for field, value in update_data.items():
@@ -164,7 +159,7 @@ def update_site(
         "client_id": db_site.client_id,
         "name": db_site.name,
         "site_type": db_site.site_type,
-        "geolocation_polygon": wkt_to_geojson(db_site.geolocation_polygon),
+        "geolocation_polygon": text_to_geojson(db_site.geolocation_polygon),
         "created_at": db_site.created_at,
         "updated_at": db_site.updated_at,
         "created_by": db_site.created_by

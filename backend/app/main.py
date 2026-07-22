@@ -2,7 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings
-from .routers import clients, sites
+from .routers import clients, sites, documents
 # from .auth import azure_ad  # Will uncomment after implementing auth
 
 app = FastAPI(
@@ -40,6 +40,7 @@ async def health_check():
 # Include routers
 app.include_router(clients.router, prefix="/api/clients", tags=["clients"])
 app.include_router(sites.router, prefix="/api/sites", tags=["sites"])
+app.include_router(documents.router, prefix="/api/documents", tags=["documents"])
 
 
 if __name__ == "__main__":

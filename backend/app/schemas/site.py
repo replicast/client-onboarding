@@ -1,7 +1,8 @@
 """Pydantic schemas for Site"""
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import datetime
 from typing import Optional, Dict, Any
+import json
 
 
 class SiteBase(BaseModel):
@@ -33,6 +34,19 @@ class SiteRead(SiteBase):
     created_at: datetime
     updated_at: datetime
     created_by: Optional[str] = None
+
+    @field_validator('geolocation_polygon', mode='before')
+    @classmethod
+    def parse_geolocation(cls, v):
+        """Parse JSON string to dict if needed"""
+        if v is None:
+            return None
+        if isinstance(v, str):
+            try:
+                return json.loads(v)
+            except json.JSONDecodeError:
+                return None
+        return v
 
     class Config:
         from_attributes = True  # Pydantic v2 (formerly orm_mode)

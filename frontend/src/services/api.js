@@ -56,4 +56,25 @@ api.interceptors.response.use(
   }
 );
 
+/**
+ * Upload a file with progress tracking
+ * @param {string} url - The API endpoint URL
+ * @param {FormData} formData - FormData containing the file
+ * @param {function} onProgress - Callback for upload progress (0-100)
+ * @returns {Promise} - Axios response
+ */
+export const uploadFile = async (url, formData, onProgress) => {
+  return api.post(url, formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+    onUploadProgress: (progressEvent) => {
+      if (onProgress && progressEvent.total) {
+        const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+        onProgress(percentCompleted);
+      }
+    },
+  });
+};
+
 export default api;

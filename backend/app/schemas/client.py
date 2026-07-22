@@ -1,7 +1,11 @@
 """Pydantic schemas for Client"""
 from pydantic import BaseModel, Field
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .site import SiteRead
+    from .document import DocumentRead
 
 
 class ClientBase(BaseModel):
@@ -37,9 +41,15 @@ class ClientRead(ClientBase):
 
 
 class ClientWithSites(ClientRead):
-    """Schema for client with associated sites"""
-    from .site import SiteRead
-    sites: List[SiteRead] = []
+    """Schema for client with associated sites and documents"""
+    sites: List["SiteRead"] = []
+    documents: List["DocumentRead"] = []
 
     class Config:
         from_attributes = True
+
+
+# Import SiteRead and DocumentRead after class definition to avoid circular import
+from .site import SiteRead
+from .document import DocumentRead
+ClientWithSites.model_rebuild()

@@ -23,14 +23,20 @@ class Settings(BaseSettings):
     API_PORT: int = 8000
     CORS_ORIGINS: str = "http://localhost:3000"
 
+    # Azure Blob Storage settings
+    AZURE_STORAGE_ACCOUNT_NAME: str = ""
+    AZURE_STORAGE_ACCOUNT_KEY: str = ""
+    AZURE_STORAGE_CONTAINER_NAME: str = "client-documents"
+
     @property
     def database_url(self) -> str:
-        """Construct Azure SQL connection string"""
+        """Construct Azure SQL connection string using pymssql (doesn't require ODBC drivers)"""
+        # For Azure SQL, use username@servername format
+        server_name = self.DB_SERVER.split('.')[0]
+        azure_user = f"{self.DB_USER}@{server_name}"
         return (
-            f"mssql+pyodbc://{self.DB_USER}:{self.DB_PASSWORD}"
-            f"@{self.DB_SERVER}/{self.DB_NAME}"
-            f"?driver={self.DB_DRIVER.replace(' ', '+')}"
-            f"&Encrypt=yes&TrustServerCertificate=no"
+            f"mssql+pymssql://{azure_user}:{self.DB_PASSWORD}"
+            f"@{self.DB_SERVER}:1433/{self.DB_NAME}"
         )
 
     @property

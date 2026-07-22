@@ -16,6 +16,8 @@ import {
 import SaveIcon from '@mui/icons-material/Save';
 import CancelIcon from '@mui/icons-material/Cancel';
 import clientService from '../../services/clientService';
+import COUNTRIES from '../../data/countries';
+import DocumentList from '../documents/DocumentList';
 
 const ORGANIZATION_SIZES = ['1-10', '11-50', '51-200', '201-500', '501-1000', '1000+'];
 
@@ -132,6 +134,7 @@ function ClientForm() {
             <Grid container spacing={3}>
               <Grid item xs={12} md={6}>
                 <TextField
+                  id="client-name"
                   fullWidth
                   label="Client Name"
                   value={formData.name}
@@ -144,18 +147,27 @@ function ClientForm() {
 
               <Grid item xs={12} md={6}>
                 <TextField
+                  id="client-country"
                   fullWidth
+                  select
                   label="Country"
                   value={formData.country}
                   onChange={handleChange('country')}
                   error={Boolean(errors.country)}
                   helperText={errors.country}
                   required
-                />
+                >
+                  {COUNTRIES.map((country) => (
+                    <MenuItem key={country.code} value={country.code}>
+                      {country.name} ({country.code})
+                    </MenuItem>
+                  ))}
+                </TextField>
               </Grid>
 
               <Grid item xs={12} md={6}>
                 <TextField
+                  id="client-business-type"
                   fullWidth
                   label="Business Type"
                   value={formData.business_type}
@@ -168,6 +180,7 @@ function ClientForm() {
 
               <Grid item xs={12} md={6}>
                 <TextField
+                  id="client-organization-size"
                   fullWidth
                   select
                   label="Organization Size"
@@ -209,6 +222,9 @@ function ClientForm() {
           </form>
         </CardContent>
       </Card>
+
+      {/* Documents Section - only show for existing clients */}
+      <DocumentList clientId={isEdit ? parseInt(id) : null} />
 
       <Snackbar
         open={snackbar.open}

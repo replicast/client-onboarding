@@ -12,13 +12,13 @@ function Layout({ children }) {
   const isAuthenticated = useIsAuthenticated();
 
   const handleLogin = () => {
-    instance.loginPopup({
+    instance.loginRedirect({
       scopes: ['User.Read'],
     });
   };
 
   const handleLogout = () => {
-    instance.logoutPopup();
+    instance.logoutRedirect();
   };
 
   return (

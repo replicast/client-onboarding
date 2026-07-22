@@ -85,7 +85,7 @@ function App() {
         />
 
         <Route
-          path="/sites/:id"
+          path="/clients/:clientId/sites/:id"
           element={
             <ProtectedRoute>
               <SiteForm />
